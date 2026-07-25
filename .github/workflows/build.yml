@@ -6,9 +6,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build with Buildozer
-        uses: ActionTools/buildozer-target-action@v2
+        uses: ArtemSBulgakov/buildozer-action@v1
         with:
-          buildozer_version: stable
+          command: buildozer android debug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
