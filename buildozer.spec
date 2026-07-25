@@ -18,5 +18,11 @@ version = 0.1
 # (requirements) Requirements of your app (comma separated)
 requirements = python3,kivy
 
+# (int) Android API to use
+android.api = 34
+
+# (str) Android Build Tools version to use
+android.build_tools_version = 34.0.0
+
 # (android.accept_apk_license) Accept android licenses
 android.accept_apk_license = yes
