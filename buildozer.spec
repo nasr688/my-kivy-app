@@ -1,52 +1,47 @@
-[app]
+name: Build Kivy Android APK
 
-# (str) Title of your application
-title = My Kivy App
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 
-# (str) Package name
-package.name = mykivyapp
+jobs:
+  build:
+    name: Build APK using Buildozer
+    runs-on: ubuntu-22.04 # نسخة الأوبونتو المستقرة لبناء بيلدوزر
 
-# (str) Package domain (needed for android packaging)
-package.domain = org.test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-# (str) Source code directory
-source.dir = .
+      # كاش لملفات Buildozer لتسريع عمليات البناء القادمة
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v4
+        with:
+          path: .buildozer
+          key: ${{ runner.os }}-buildozer-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
 
-# (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas
+      # تثبيت الاعتماديات والبرامج التي تحتاجها أداة Buildozer
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shasum build-essential libltdl-dev libffi-dev tar bzip2 gzip unzip make gettext zip indextrack-perl libssl-dev autoconf automake libtool patch openssl python3-pip
+          sudo apt-get install -y libsqlite3-dev sqlite3
+          sudo apt-get install -y uuid-dev
+          pip3 install --user --upgrade buildozer Cython virtualenv
 
-# (str) Application version
-version = 1.0
+      # خطوة بناء الـ APK الفعالة لتطبيقات Kivy
+      - name: Build with Buildozer
+        run: |
+          export PATH=$PATH:~/.local/bin
+          buildozer android debug
 
-# (list) Application requirements
-# comma separated e.g. requirements = sqlite3,kivy
-requirements = python3, kivy==2.3.0, hostpython3
-
-# (str) Supported orientations
-orientation = portrait
-
-# (bool) Indicate if the application should be fullscreen or not
-fullscreen = 0
-
-# (list) Permissions
-#android.permissions = INTERNET
-
-# (list) Supported target architectures
-android.archs = arm64-v8a
-
-# (int) Target Android API
-android.api = 33
-
-# (int) Minimum API your APK will support
-android.minapi = 21
-
-# (bool) Allow backup
-android.allow_backup = True
-
-[buildozer]
-
-# (int) Log level (0 = error only, 1 = info, 2 = debug (with command output))
-log_level = 2
-
-# (int) Display warning if buildozer is run as root (0 = False, 1 = True)
-warn_on_root = 1
+      # رفع ملف الـ APK الناتج
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kivy-debug-apk
+          path: .bin/*.apk
