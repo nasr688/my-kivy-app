@@ -27,8 +27,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential libltdl-dev libffi-dev tar bzip2 gzip unzip make gettext zip libssl-dev autoconf automake libtool patch openssl python3-pip
-          sudo apt-get install -y libsqlite3-dev sqlite3
-          sudo apt-get install -y uuid-dev openjdk-17-jdk
+          sudo apt-get install -y libsqlite3-dev sqlite3 autotools-dev
+          sudo apt-get install -y uuid-dev openjdk-17-jdk cmake ccache
           pip3 install --user --upgrade buildozer Cython virtualenv
 
       # التعديل القوي: الموافقة الإجبارية والمباشرة على جميع تراخيص أندرويد
@@ -41,12 +41,32 @@ jobs:
             yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses || true
           fi
 
+      # التعديل التقني: تشغيل البناء وحفظ السجل الضخم في ملف نصي خارجي لمنع التعليق
       - name: Build with Buildozer
         run: |
           export PATH=$PATH:~/.local/bin
-          yes | buildozer android debug
+          yes | buildozer -v android debug > buildozer_full_log.txt 2>&1
+
+      # التعديل السحري: إذا فشل البناء، هذا الأمر يستخرج آخر 100 سطر (المشكلة الحقيقية) في ملف مستقل
+      - name: Extract Error Log if Failed
+        if: failure()
+        run: |
+          echo "=== EXTRACTING LAST 100 LINES OF LOG ==="
+          tail -n 100 buildozer_full_log.txt > build_error_only.txt
+          cat build_error_only.txt
+
+      # رفع ملف الخطأ الصغير والملف الكامل كـ Artifacts لتقرأ المشكلة بوضوح
+      - name: Upload Error Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-reports
+          path: |
+            build_error_only.txt
+            buildozer_full_log.txt
 
       - name: Upload APK Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: kivy-debug-apk
