@@ -1,22 +1,45 @@
-[app]
+name: Build Kivy Android APK
 
-# (title) Title of your application
-title = My Kivy App
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 
-# (package.name) Package name
-package.name = mykivyapp
+jobs:
+  build:
+    name: Build APK using Buildozer
+    runs-on: ubuntu-22.04
 
-# (package.domain) Package domain (needed for android packaging)
-package.domain = org.test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-# (source.dir) Source code where the main.py lives
-source.dir = .
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v4
+        with:
+          path: .buildozer
+          key: ${{ runner.os }}-buildozer-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
 
-# (version) Application version
-version = 0.1
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libltdl-dev libffi-dev tar bzip2 gzip unzip make gettext zip libssl-dev autoconf automake libtool patch openssl python3-pip
+          sudo apt-get install -y libsqlite3-dev sqlite3
+          sudo apt-get install -y uuid-dev
+          pip3 install --user --upgrade buildozer Cython virtualenv
 
-# (requirements) Requirements of your app (comma separated)
-requirements = python3,kivy
+      # التعديل هنا: إضافة أمر yes | للموافقة التلقائية على الرخص
+      - name: Build with Buildozer
+        run: |
+          export PATH=$PATH:~/.local/bin
+          yes | buildozer android debug
 
-# (android.accept_apk_license) Accept android licenses
-android.accept_apk_license = yes
+      # رفع ملف الـ APK الناتج
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kivy-debug-apk
+          path: bin/*.apk
