@@ -9,13 +9,12 @@ on:
 jobs:
   build:
     name: Build APK using Buildozer
-    runs-on: ubuntu-22.04 # نسخة الأوبونتو المستقرة لبناء بيلدوزر
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # كاش لملفات Buildozer لتسريع عمليات البناء القادمة
       - name: Cache Buildozer global directory
         uses: actions/cache@v4
         with:
@@ -24,7 +23,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
-      # تثبيت الاعتماديات والبرامج التي تحتاجها أداة Buildozer
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -33,15 +31,13 @@ jobs:
           sudo apt-get install -y uuid-dev
           pip3 install --user --upgrade buildozer Cython virtualenv
 
-      # خطوة بناء الـ APK الفعالة لتطبيقات Kivy
       - name: Build with Buildozer
         run: |
           export PATH=$PATH:~/.local/bin
           buildozer android debug
 
-      # رفع ملف الـ APK الناتج
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: kivy-debug-apk
-          path: .bin/*.apk
+          path: bin/*.apk
